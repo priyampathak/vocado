@@ -1,0 +1,14 @@
+﻿.next/dev/types/validator.ts(130,31): error TS2344: Type 'typeof import("C:/Users/DELL/Documents/Vocado/vocado-app/src/app/workspace/[workspaceId]/layout")' does not satisfy the constraint 'LayoutConfig<"/workspace/[workspaceId]">'.
+  Types of property 'default' are incompatible.
+    Type '({ children, params, }: { children: ReactNode; params: { workspaceId: string; }; }) => Element' is not assignable to type 'ComponentType<LayoutProps<"/workspace/[workspaceId]">> | ((props: LayoutProps<"/workspace/[workspaceId]">) => void | ReactNode | Promise<...> | Promise<...>)'.
+      Type '({ children, params, }: { children: ReactNode; params: { workspaceId: string; }; }) => Element' is not assignable to type 'FunctionComponent<LayoutProps<"/workspace/[workspaceId]">>'.
+        Types of parameters '__0' and 'props' are incompatible.
+          Type 'LayoutProps<"/workspace/[workspaceId]">' is not assignable to type '{ children: ReactNode; params: { workspaceId: string; }; }'.
+            Types of property 'params' are incompatible.
+              Property 'workspaceId' is missing in type 'Promise<{ workspaceId: string; }>' but required in type '{ workspaceId: string; }'.
+src/app/actions/plot.ts(21,27): error TS2339: Property 'plot' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/app/actions/plot.ts(38,18): error TS2353: Object literal may only specify known properties, and 'clerkUserId' does not exist in type 'UserWhereUniqueInput'.
+src/app/actions/plot.ts(47,32): error TS2551: Property 'workspaceRole' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'workspace'?
+src/app/actions/plot.ts(63,34): error TS2339: Property 'plot' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/components/layout/topbar.tsx(71,37): error TS2322: Type '{ afterSignOutUrl: string; }' is not assignable to type 'IntrinsicAttributes & Without<WithClerkProp<PropsWithChildren<UserButtonPropsWithoutCustomPages> & FallbackProp>, "clerk">'.
+  Property 'afterSignOutUrl' does not exist on type 'IntrinsicAttributes & Without<WithClerkProp<PropsWithChildren<UserButtonPropsWithoutCustomPages> & FallbackProp>, "clerk">'.

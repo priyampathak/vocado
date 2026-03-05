@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provide = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId    String            @unique
+  email      String            @unique
+  name       String
+  avatarUrl  String?
+  workspaces WorkspaceMember[]
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+}
+
+model Workspace {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  inviteCode String            @unique
+  members    WorkspaceMember[]
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+}
+
+model WorkspaceMember {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  workspaceId String   @db.ObjectId
+  role        Role     @default(MEMBER)
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, workspaceId])
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
