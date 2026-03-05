@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provide = "mongodb"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -14,6 +14,7 @@ model User {
   name       String
   avatarUrl  String?
   workspaces WorkspaceMember[]
+  plots      Plot[]            @relation("PlotCreator")
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
 }
@@ -23,23 +24,81 @@ model Workspace {
   name       String
   inviteCode String            @unique
   members    WorkspaceMember[]
+  teamspaces Teamspace[]
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
 }
 
 model WorkspaceMember {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String   @db.ObjectId
-  workspaceId String   @db.ObjectId
-  role        Role     @default(MEMBER)
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String    @db.ObjectId
+  workspaceId String    @db.ObjectId
+  role        Role      @default(MEMBER)
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@unique([userId, workspaceId])
+}
+
+// ---------------------------------------------------------------------------
+// Teamspace → Folder → Plot hierarchy (strict: no nested folders)
+// ---------------------------------------------------------------------------
+
+model Teamspace {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  emoji       String?   @default("📁")
+  workspaceId String    @db.ObjectId
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  folders     Folder[]
+  plots       Plot[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Folder {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  emoji       String?   @default("📂")
+  teamspaceId String    @db.ObjectId
+  teamspace   Teamspace @relation(fields: [teamspaceId], references: [id], onDelete: Cascade)
+
+  // A Folder holds Plots — but a Folder CANNOT contain other Folders.
+  // There is intentionally NO parentFolderId field here.
+  plots       Plot[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Plot {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  emoji       String?   @default("📄")
+
+  // Belongs to a Teamspace (always)
+  teamspaceId String    @db.ObjectId
+  teamspace   Teamspace @relation(fields: [teamspaceId], references: [id], onDelete: Cascade)
+
+  // Optionally placed inside a Folder
+  folderId    String?   @db.ObjectId
+  folder      Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  // Private plots only visible to the creator ("My Space")
+  isPrivate   Boolean   @default(false)
+
+  // Creator — for My Space filtering
+  creatorId   String    @db.ObjectId
+  creator     User      @relation("PlotCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 enum Role {
