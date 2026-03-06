@@ -1,6 +1,7 @@
 import React from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TheStream } from "@/components/layout/stream";
+import { Topbar } from "@/components/layout/topbar";
 
 export default async function WorkspaceLayout({
     children,
@@ -18,6 +19,7 @@ export default async function WorkspaceLayout({
 
             {/* Main Canvas: 80% width */}
             <div className="flex flex-1 flex-col overflow-hidden">
+                <Topbar />
                 <main className="flex-1 overflow-y-auto p-4">
                     {children}
                 </main>
