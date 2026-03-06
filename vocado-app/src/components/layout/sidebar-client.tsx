@@ -129,7 +129,7 @@ export function SidebarClient({
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
     const [isPending, startTransition] = useTransition();
     const [mounted, setMounted] = React.useState(false);
-    
+
     // Dialog states
     const [createFolderDialog, setCreateFolderDialog] = React.useState<{ open: boolean; teamspaceId: string | null }>({ open: false, teamspaceId: null });
     const [createPlotDialog, setCreatePlotDialog] = React.useState<{ open: boolean; teamspaceId: string | null; folderId: string | null; isPrivate: boolean }>({ open: false, teamspaceId: null, folderId: null, isPrivate: false });
@@ -246,47 +246,47 @@ export function SidebarClient({
                         )}
                     />
                     {canManage && (
-                    <div className="opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button className="flex items-center justify-center h-5 w-5 rounded hover:bg-muted">
-                                    <MoreHorizontal className="h-3 w-3 text-[oklch(0.55_0.04_135)]" />
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                                <DropdownMenuItem
-                                    onClick={(e) => {
+                        <div className="opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button className="flex items-center justify-center h-5 w-5 rounded hover:bg-muted">
+                                        <MoreHorizontal className="h-3 w-3 text-[oklch(0.55_0.04_135)]" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40">
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCreatePlotDialog({ open: true, teamspaceId: tsId, folderId: folder.id, isPrivate: false });
+                                        }}
+                                    >
+                                        <FileText className="h-4 w-4 mr-2" />
+                                        Create Plot
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => {
                                         e.stopPropagation();
-                                        setCreatePlotDialog({ open: true, teamspaceId: tsId, folderId: folder.id, isPrivate: false });
-                                    }}
-                                >
-                                    <FileText className="h-4 w-4 mr-2" />
-                                    Create Plot
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => {
-                                    e.stopPropagation();
-                                    const newName = prompt("Rename folder", folder.name);
-                                    if (!newName || !newName.trim()) return;
-                                    void renameFolder(workspaceId, folder.id, newName.trim());
-                                }}>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Rename Folder
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                    className="text-destructive"
-                                    onClick={async (e) => {
-                                        e.stopPropagation();
-                                        if (confirm(`Delete folder "${folder.name}"? This will also delete all plots inside.`)) {
-                                            await deleteFolder(workspaceId, folder.id);
-                                        }
-                                    }}
-                                >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete Folder
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
+                                        const newName = prompt("Rename folder", folder.name);
+                                        if (!newName || !newName.trim()) return;
+                                        void renameFolder(workspaceId, folder.id, newName.trim());
+                                    }}>
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Rename Folder
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="text-destructive"
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            if (confirm(`Delete folder "${folder.name}"? This will also delete all plots inside.`)) {
+                                                await deleteFolder(workspaceId, folder.id);
+                                            }
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete Folder
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     )}
                 </div>
                 {isOpen && (
@@ -328,15 +328,17 @@ export function SidebarClient({
                     {isPrivate && <Lock className="h-3 w-3" />}
                 </div>
 
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <Plus
-                        className="h-4 w-4 hover:text-foreground transition-colors"
-                        onClick={async (e) => {
-                            e.stopPropagation();
-                            await createTeamspace(workspaceId, { name: "New Teamspace" });
-                        }}
-                    />
-                </div>
+                {isAdmin && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Plus
+                            className="h-4 w-4 hover:text-foreground transition-colors"
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                await createTeamspace(workspaceId, { name: "New Teamspace" });
+                            }}
+                        />
+                    </div>
+                )}
             </button>
 
             {isOpen && (
@@ -372,37 +374,37 @@ export function SidebarClient({
                                         })()}
                                         <span className="flex-1 truncate text-left">{ts.name}</span>
                                         {canManageTeamspace && (
-                                        <div className="opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <button className="flex items-center justify-center h-5 w-5 rounded hover:bg-muted">
-                                                        <Plus className="h-3 w-3 text-[oklch(0.55_0.04_135)]" />
-                                                    </button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-40">
-                                                    {!isPrivate && (
+                                            <div className="opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <button className="flex items-center justify-center h-5 w-5 rounded hover:bg-muted">
+                                                            <Plus className="h-3 w-3 text-[oklch(0.55_0.04_135)]" />
+                                                        </button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-40">
+                                                        {!isPrivate && (
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setCreateFolderDialog({ open: true, teamspaceId: ts.id });
+                                                                }}
+                                                            >
+                                                                <FolderOpen className="h-4 w-4 mr-2" />
+                                                                New Folder
+                                                            </DropdownMenuItem>
+                                                        )}
                                                         <DropdownMenuItem
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setCreateFolderDialog({ open: true, teamspaceId: ts.id });
+                                                                setCreatePlotDialog({ open: true, teamspaceId: ts.id, folderId: null, isPrivate });
                                                             }}
                                                         >
-                                                            <FolderOpen className="h-4 w-4 mr-2" />
-                                                            New Folder
+                                                            <FileText className="h-4 w-4 mr-2" />
+                                                            New Plot
                                                         </DropdownMenuItem>
-                                                    )}
-                                                    <DropdownMenuItem
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setCreatePlotDialog({ open: true, teamspaceId: ts.id, folderId: null, isPrivate });
-                                                        }}
-                                                    >
-                                                        <FileText className="h-4 w-4 mr-2" />
-                                                        New Plot
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
                                         )}
                                     </div>
                                     {isExpanded && (

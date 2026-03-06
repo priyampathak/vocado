@@ -60,6 +60,13 @@ export async function createTeamspace(
     });
     if (!membership) throw new Error("Not a member of this workspace.");
 
+    const isWorkspaceAdmin = membership.role === Role.ADMIN || membership.role === Role.OWNER;
+
+    // Check if user is workspace admin to create teamspace
+    if (!isWorkspaceAdmin) {
+        throw new Error("Only workspace admins can create teamspaces.");
+    }
+
     // Create teamspace with creator as admin
     const teamspace = await db.teamspace.create({
         data: {
@@ -100,11 +107,17 @@ export async function updateTeamspace(
 ) {
     const dbUser = await requireDbUser();
 
-    // Check if user is admin of this teamspace
-    const membership = await db.teamspaceMember.findUnique({
+    const workspaceMembership = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId: dbUser.id, workspaceId } },
+    });
+    const isWorkspaceAdmin = workspaceMembership?.role === Role.ADMIN || workspaceMembership?.role === Role.OWNER;
+
+    // Check if user is admin of this teamspace OR workspace admin
+    const teamMembership = await db.teamspaceMember.findUnique({
         where: { userId_teamspaceId: { userId: dbUser.id, teamspaceId } },
     });
-    if (!membership || membership.role !== TeamRole.ADMIN) {
+
+    if (!isWorkspaceAdmin && (!teamMembership || teamMembership.role !== TeamRole.ADMIN)) {
         throw new Error("Only admins can update teamspaces.");
     }
 
@@ -121,11 +134,17 @@ export async function updateTeamspace(
 export async function deleteTeamspace(workspaceId: string, teamspaceId: string) {
     const dbUser = await requireDbUser();
 
-    // Check if user is admin of this teamspace
-    const membership = await db.teamspaceMember.findUnique({
+    const workspaceMembership = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId: dbUser.id, workspaceId } },
+    });
+    const isWorkspaceAdmin = workspaceMembership?.role === Role.ADMIN || workspaceMembership?.role === Role.OWNER;
+
+    // Check if user is admin of this teamspace OR workspace admin
+    const teamMembership = await db.teamspaceMember.findUnique({
         where: { userId_teamspaceId: { userId: dbUser.id, teamspaceId } },
     });
-    if (!membership || membership.role !== TeamRole.ADMIN) {
+
+    if (!isWorkspaceAdmin && (!teamMembership || teamMembership.role !== TeamRole.ADMIN)) {
         throw new Error("Only admins can delete teamspaces.");
     }
 
@@ -146,11 +165,17 @@ export async function addTeamspaceMember(
 ) {
     const dbUser = await requireDbUser();
 
-    // Check if user is admin of this teamspace
-    const membership = await db.teamspaceMember.findUnique({
+    const workspaceMembership = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId: dbUser.id, workspaceId } },
+    });
+    const isWorkspaceAdmin = workspaceMembership?.role === Role.ADMIN || workspaceMembership?.role === Role.OWNER;
+
+    // Check if user is admin of this teamspace OR workspace admin
+    const teamMembership = await db.teamspaceMember.findUnique({
         where: { userId_teamspaceId: { userId: dbUser.id, teamspaceId } },
     });
-    if (!membership || membership.role !== TeamRole.ADMIN) {
+
+    if (!isWorkspaceAdmin && (!teamMembership || teamMembership.role !== TeamRole.ADMIN)) {
         throw new Error("Only admins can add members.");
     }
 
@@ -170,11 +195,17 @@ export async function removeTeamspaceMember(
 ) {
     const dbUser = await requireDbUser();
 
-    // Check if user is admin of this teamspace
-    const membership = await db.teamspaceMember.findUnique({
+    const workspaceMembership = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId: dbUser.id, workspaceId } },
+    });
+    const isWorkspaceAdmin = workspaceMembership?.role === Role.ADMIN || workspaceMembership?.role === Role.OWNER;
+
+    // Check if user is admin of this teamspace OR workspace admin
+    const teamMembership = await db.teamspaceMember.findUnique({
         where: { userId_teamspaceId: { userId: dbUser.id, teamspaceId } },
     });
-    if (!membership || membership.role !== TeamRole.ADMIN) {
+
+    if (!isWorkspaceAdmin && (!teamMembership || teamMembership.role !== TeamRole.ADMIN)) {
         throw new Error("Only admins can remove members.");
     }
 
@@ -194,11 +225,17 @@ export async function updateTeamspaceMemberRole(
 ) {
     const dbUser = await requireDbUser();
 
-    // Check if user is admin of this teamspace
-    const membership = await db.teamspaceMember.findUnique({
+    const workspaceMembership = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId: dbUser.id, workspaceId } },
+    });
+    const isWorkspaceAdmin = workspaceMembership?.role === Role.ADMIN || workspaceMembership?.role === Role.OWNER;
+
+    // Check if user is admin of this teamspace OR workspace admin
+    const teamMembership = await db.teamspaceMember.findUnique({
         where: { userId_teamspaceId: { userId: dbUser.id, teamspaceId } },
     });
-    if (!membership || membership.role !== TeamRole.ADMIN) {
+
+    if (!isWorkspaceAdmin && (!teamMembership || teamMembership.role !== TeamRole.ADMIN)) {
         throw new Error("Only admins can update member roles.");
     }
 
@@ -221,13 +258,17 @@ export async function getWorkspaceTeamspaces(workspaceId: string) {
     });
     if (!workspaceMembership) throw new Error("Not a member of this workspace.");
 
-    // Get all teamspaces where user is a member
+    const isWorkspaceAdmin = workspaceMembership.role === Role.ADMIN || workspaceMembership.role === Role.OWNER;
+
+    // Get all teamspaces where user is a member, or all if workspace admin
     const teamspaces = await db.teamspace.findMany({
         where: {
             workspaceId,
-            members: {
-                some: { userId: dbUser.id },
-            },
+            ...(isWorkspaceAdmin ? {} : {
+                members: {
+                    some: { userId: dbUser.id },
+                },
+            }),
         },
         include: {
             members: {
@@ -253,12 +294,17 @@ export async function getWorkspaceTeamspaces(workspaceId: string) {
 export async function getTeamspaceDetails(workspaceId: string, teamspaceId: string) {
     const dbUser = await requireDbUser();
 
-    // Check if user is member of this teamspace
-    const membership = await db.teamspaceMember.findUnique({
+    const workspaceMembership = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId: dbUser.id, workspaceId } },
+    });
+    const isWorkspaceAdmin = workspaceMembership?.role === Role.ADMIN || workspaceMembership?.role === Role.OWNER;
+
+    const teamMembership = await db.teamspaceMember.findUnique({
         where: { userId_teamspaceId: { userId: dbUser.id, teamspaceId } },
     });
-    if (!membership) {
-        throw new Error("You are not a member of this teamspace.");
+
+    if (!isWorkspaceAdmin && !teamMembership) {
+        throw new Error("You do not have access to this teamspace.");
     }
 
     const teamspace = await db.teamspace.findUnique({
@@ -281,7 +327,7 @@ export async function getTeamspaceDetails(workspaceId: string, teamspaceId: stri
 
     return {
         ...teamspace,
-        userRole: membership.role,
+        userRole: teamMembership?.role || (isWorkspaceAdmin ? TeamRole.ADMIN : null),
     };
 }
 
@@ -469,13 +515,17 @@ export async function getTeamspaceTree(workspaceId: string) {
     });
     if (!membership) return [];
 
-    // Only fetch teamspaces where the user is a member
+    const isWorkspaceAdmin = membership.role === Role.ADMIN || membership.role === Role.OWNER;
+
+    // Only fetch teamspaces where the user is a member (or all if workspace admin)
     const teamspaces = await db.teamspace.findMany({
         where: {
             workspaceId,
-            members: {
-                some: { userId: dbUser.id },
-            },
+            ...(isWorkspaceAdmin ? {} : {
+                members: {
+                    some: { userId: dbUser.id },
+                },
+            }),
         },
         include: {
             members: {
@@ -503,13 +553,22 @@ export async function getTeamspaceTree(workspaceId: string) {
 export async function getMySpaceTree(workspaceId: string) {
     const dbUser = await requireDbUser();
 
-    // Only fetch teamspaces where the user is a member
+    const membership = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId: dbUser.id, workspaceId } },
+    });
+    if (!membership) return [];
+
+    const isWorkspaceAdmin = membership.role === Role.ADMIN || membership.role === Role.OWNER;
+
+    // Only fetch teamspaces where the user is a member (or all if workspace admin)
     const teamspaces = await db.teamspace.findMany({
         where: {
             workspaceId,
-            members: {
-                some: { userId: dbUser.id },
-            },
+            ...(isWorkspaceAdmin ? {} : {
+                members: {
+                    some: { userId: dbUser.id },
+                },
+            }),
         },
         include: {
             members: {

@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 import { CreateTeamspaceDialog } from "./create-teamspace-dialog";
 import { EditTeamspaceDialog } from "./edit-teamspace-dialog";
 import { ViewTeamspaceDialog } from "./view-teamspace-dialog";
-import { TeamRole } from "@prisma/client";
+import { TeamRole, Role } from "@prisma/client";
 
 interface Teamspace {
   id: string;
@@ -52,11 +52,13 @@ interface Teamspace {
 interface TeamspacesClientProps {
   workspaceId: string;
   teamspaces: Teamspace[];
+  userRole: Role | null;
 }
 
 export function TeamspacesClient({
   workspaceId,
   teamspaces: initialTeamspaces,
+  userRole: workspaceUserRole,
 }: TeamspacesClientProps) {
   const router = useRouter();
   const [teamspaces, setTeamspaces] = React.useState(initialTeamspaces);
@@ -106,6 +108,8 @@ export function TeamspacesClient({
     });
   };
 
+  const isWorkspaceAdmin = workspaceUserRole === Role.OWNER || workspaceUserRole === Role.ADMIN;
+
   return (
     <div className="container mx-auto py-8 px-6 max-w-7xl">
       {/* Header */}
@@ -116,13 +120,15 @@ export function TeamspacesClient({
             Manage your teamspaces and collaborate with your team
           </p>
         </div>
-        <Button
-          onClick={() => setCreateDialogOpen(true)}
-          className="gap-2 bg-primary hover:bg-primary/90 shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          Create Teamspace
-        </Button>
+        {isWorkspaceAdmin && (
+          <Button
+            onClick={() => setCreateDialogOpen(true)}
+            className="gap-2 bg-primary hover:bg-primary/90 shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            Create Teamspace
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -133,12 +139,16 @@ export function TeamspacesClient({
           </div>
           <h3 className="text-lg font-semibold mb-2">No teamspaces yet</h3>
           <p className="text-muted-foreground mb-4">
-            Create your first teamspace to start collaborating with your team
+            {isWorkspaceAdmin
+              ? "Create your first teamspace to start collaborating with your team"
+              : "No teamspaces have been created yet or you haven't been added to any."}
           </p>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Teamspace
-          </Button>
+          {isWorkspaceAdmin && (
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Teamspace
+            </Button>
+          )}
         </div>
       ) : (
         <div className="border rounded-xl overflow-hidden bg-card shadow-sm">
@@ -157,11 +167,19 @@ export function TeamspacesClient({
             </TableHeader>
             <TableBody>
               {teamspaces.map((teamspace) => {
-                const isAdmin = teamspace.userRole === TeamRole.ADMIN;
+                const isTeamspaceAdmin = teamspace.userRole === TeamRole.ADMIN;
+                const isAdmin = isWorkspaceAdmin || isTeamspaceAdmin;
                 const Icon = teamspace.emoji ? getIcon(teamspace.emoji) : null;
-                
+
                 return (
-                  <TableRow key={teamspace.id} className="hover:bg-muted/30">
+                  <TableRow
+                    key={teamspace.id}
+                    className="hover:bg-muted/30 cursor-pointer"
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('.text-right')) return;
+                      handleView(teamspace);
+                    }}
+                  >
                     <TableCell>
                       <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
                         {Icon || <Users className="h-5 w-5" />}
@@ -186,7 +204,7 @@ export function TeamspacesClient({
                         variant={isAdmin ? "default" : "secondary"}
                         className="capitalize"
                       >
-                        {teamspace.userRole?.toLowerCase()}
+                        {teamspace.userRole ? teamspace.userRole.toLowerCase() : "Viewer"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -251,23 +269,20 @@ export function TeamspacesClient({
           <EditTeamspaceDialog
             open={editDialogOpen}
             onOpenChange={setEditDialogOpen}
-            workspaceId={workspaceId}
             teamspace={selectedTeamspace}
-            onSuccess={(updatedTeamspace) => {
+            workspaceId={workspaceId}
+            onSuccess={(updated) => {
               setTeamspaces((prev) =>
-                prev.map((ts) =>
-                  ts.id === updatedTeamspace.id ? { ...ts, ...updatedTeamspace } : ts
-                )
+                prev.map((ts) => (ts.id === updated.id ? { ...ts, ...updated } : ts))
               );
               router.refresh();
             }}
           />
-
           <ViewTeamspaceDialog
             open={viewDialogOpen}
             onOpenChange={setViewDialogOpen}
-            workspaceId={workspaceId}
             teamspace={selectedTeamspace}
+            workspaceId={workspaceId}
             onUpdate={() => router.refresh()}
           />
         </>
