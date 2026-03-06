@@ -160,6 +160,7 @@ export function WorkspacesClient({
                 <TableHead className="text-center">Teamspaces</TableHead>
                 <TableHead>Your Role</TableHead>
                 <TableHead>Created</TableHead>
+                <TableHead>Invite Code</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -200,14 +201,18 @@ export function WorkspacesClient({
                   <TableCell className="text-muted-foreground">
                     {formatDate(workspace.createdAt)}
                   </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono text-xs">
+                      {workspace.inviteCode}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={`h-8 w-8 p-0 ${workspace.userRole === "MEMBER" ? "opacity-30 cursor-not-allowed" : ""}`}
-                          disabled={workspace.userRole === "MEMBER"}
+                          className="h-8 w-8 p-0"
                         >
                           <MoreVertical className="h-4 w-4" />
                         </Button>

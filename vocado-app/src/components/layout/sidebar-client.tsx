@@ -105,7 +105,7 @@ function getModules(workspaceId: string): ModuleItem[] {
         { icon: MessageCircle, label: "Chat", href: `/workspace/${workspaceId}/chat` },
         { icon: Mail, label: "Mailbox", href: `/workspace/${workspaceId}/mailbox` },
         { icon: CalendarDays, label: "Calendar", href: `/workspace/${workspaceId}/calendar` },
-        { icon: Building2, label: "Workspaces", href: `/workspace/${workspaceId}/workspaces`, adminOnly: true },
+        { icon: Building2, label: "Workspaces", href: `/workspace/${workspaceId}/workspaces` },
         { icon: Users, label: "Teamspaces", href: `/workspace/${workspaceId}/teamspaces` },
     ];
 }
