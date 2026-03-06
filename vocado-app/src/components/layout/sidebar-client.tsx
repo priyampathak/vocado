@@ -299,7 +299,7 @@ export function SidebarClient({
     // ──────────────────────────────────────────
 
     return (
-        <aside className="flex h-screen w-[280px] shrink-0 flex-col bg-white border-r-0 shadow-[4px_0_30px_rgb(0,0,0,0.02)] m-4 rounded-[2rem] overflow-hidden ml-6 mt-6 mb-8 h-[calc(100vh-64px)] pb-4">
+        <aside className="flex w-[280px] shrink-0 flex-col bg-white border-r-0 shadow-[4px_0_30px_rgb(0,0,0,0.02)] rounded-[2rem] overflow-hidden ml-6 my-6 h-[calc(100vh-48px)] pb-4">
             {/* A. Workspace Switcher */}
             <WorkspaceSwitcher
                 workspaces={workspaces}
