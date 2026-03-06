@@ -46,62 +46,67 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  /* Custom brand colors - switched to Purple/Indigo */
-  --color-brand: oklch(0.55 0.2 280);
-  /* Indigo/Purple */
-  --color-brand-light: oklch(0.9 0.05 280);
-  --color-brand-muted: oklch(0.95 0.02 280);
-  --color-success: oklch(0.7 0.15 150);
-  --color-success-muted: oklch(0.95 0.05 150);
-  --color-warning: oklch(0.75 0.15 60);
-  /* Orange/Yellow */
-  --color-warning-muted: oklch(0.96 0.04 60);
-  --color-info: oklch(0.65 0.15 250);
-  --color-info-muted: oklch(0.95 0.04 250);
+  /* Custom brand colors matching new theme */
+  --color-slate: #1e2631;
+  --color-pink: #f2b8eb;
+  --color-olive: #c0c954;
+  --color-beige: #f3f2ec;
+  --color-white: #ffffff;
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.99 0.005 130);
-  /* Subtlest avocado cream */
-  --foreground: oklch(0.2 0.03 135);
-  /* Dark avocado green */
-  --card: oklch(1 0 0);
-  /* Pure white cards */
-  --card-foreground: oklch(0.2 0.03 135);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.03 135);
-  --primary: oklch(0.55 0.14 135);
-  /* Avocado Green */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0.02 130);
-  --secondary-foreground: oklch(0.3 0.04 135);
-  --muted: oklch(0.96 0.02 130);
-  --muted-foreground: oklch(0.55 0.04 135);
-  --accent: oklch(0.96 0.02 130);
-  --accent-foreground: oklch(0.2 0.03 135);
-  --destructive: oklch(0.6 0.18 20);
-  --border: oklch(0.93 0.01 130);
-  --input: oklch(0.93 0.01 130);
-  --ring: oklch(0.55 0.14 135);
-  --chart-1: oklch(0.55 0.14 135);
-  --chart-2: oklch(0.7 0.12 115);
-  --chart-3: oklch(0.45 0.08 65);
-  /* Seed warm brown */
-  --chart-4: oklch(0.85 0.1 140);
-  /* Very light yellow-green */
-  --chart-5: oklch(0.35 0.08 145);
-  /* Dark avocado skin */
-  --sidebar: oklch(0.99 0.005 130);
-  --sidebar-foreground: oklch(0.3 0.04 135);
-  --sidebar-primary: oklch(0.55 0.14 135);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.94 0.02 130);
-  /* Light green-grey for selected state */
-  --sidebar-accent-foreground: oklch(0.15 0.03 135);
-  /* Darker green text */
-  --sidebar-border: oklch(0.93 0.01 130);
-  --sidebar-ring: oklch(0.55 0.14 135);
+  --radius: 1rem;
+
+  /* Core UI */
+  --background: var(--color-beige);
+  --foreground: var(--color-slate);
+
+  /* Cards & Containers */
+  --card: var(--color-white);
+  --card-foreground: var(--color-slate);
+  --popover: var(--color-white);
+  --popover-foreground: var(--color-slate);
+
+  /* Primary accents (Slate) */
+  --primary: var(--color-slate);
+  --primary-foreground: var(--color-white);
+
+  /* Secondary / Alternative Accents  */
+  --secondary: var(--color-pink);
+  --secondary-foreground: var(--color-slate);
+
+  /* Neutral / Muted */
+  --muted: #e7e6df;
+  --muted-foreground: #7d848c;
+
+  /* Status */
+  --accent: var(--color-olive);
+  --accent-foreground: var(--color-slate);
+  --destructive: #ef4444;
+  /* red-500 */
+
+  /* Borders and Inputs */
+  --border: #e0ded8;
+  /* Slightly darker than beige */
+  --input: #e0ded8;
+  --ring: var(--color-slate);
+
+  /* Charts */
+  --chart-1: var(--color-pink);
+  --chart-2: var(--color-olive);
+  --chart-3: var(--color-slate);
+  --chart-4: #f9d150;
+  --chart-5: #64748b;
+
+  /* Sidebar */
+  --sidebar: var(--color-white);
+  --sidebar-foreground: var(--color-slate);
+  --sidebar-primary: var(--color-slate);
+  --sidebar-primary-foreground: var(--color-white);
+  --sidebar-accent: var(--color-beige);
+  --sidebar-accent-foreground: var(--color-slate);
+  --sidebar-border: #efefef;
+  --sidebar-ring: var(--color-slate);
 }
 
 .dark {

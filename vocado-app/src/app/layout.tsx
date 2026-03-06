@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-const axiformaFont = Plus_Jakarta_Sans({
-  variable: "--font-axiforma",
+const interFont = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -23,8 +23,8 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${axiformaFont.variable} font-sans antialiased flex flex-col min-h-screen bg-background text-foreground`}
-          style={{ fontFamily: 'var(--font-axiforma), "Plus Jakarta Sans", sans-serif' }}
+          className={`${interFont.variable} font-sans antialiased flex flex-col min-h-screen bg-background text-foreground`}
+          style={{ fontFamily: 'var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif' }}
         >
           <TooltipProvider>
             {children}

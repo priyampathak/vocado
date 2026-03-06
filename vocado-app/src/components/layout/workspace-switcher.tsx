@@ -6,7 +6,7 @@ import {
     ChevronDown,
     Check,
     Plus,
-    Box,
+    Aperture,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -59,17 +59,14 @@ export function WorkspaceSwitcher({
                         )}
                     >
                         {/* Logo Icon */}
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[oklch(0.55_0.14_135)] to-[oklch(0.7_0.12_115)] shadow-[0_2px_8px_rgb(0,0,0,0.08)]">
-                            <Box className="h-4 w-4 text-white" />
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#ff6b00] shadow-sm">
+                            <Aperture className="h-5 w-5 text-white" />
                         </div>
 
                         {/* Workspace Name */}
                         <div className="flex flex-1 flex-col min-w-0">
-                            <span className="text-[13px] font-bold tracking-tight text-[oklch(0.25_0.03_135)] truncate">
-                                {current?.name ?? "Vocado OS"}
-                            </span>
-                            <span className="text-[10px] font-medium text-[oklch(0.6_0.04_135)] capitalize">
-                                {current?.role?.toLowerCase() ?? "workspace"}
+                            <span className="text-[17px] font-bold tracking-tight text-foreground truncate">
+                                {current?.name ?? "Projector"}
                             </span>
                         </div>
 
@@ -98,25 +95,25 @@ export function WorkspaceSwitcher({
                             key={ws.id}
                             onClick={() => switchWorkspace(ws.id)}
                             className={cn(
-                                "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium cursor-pointer transition-all duration-150",
+                                "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[14px] font-medium cursor-pointer transition-all duration-150",
                                 ws.id === currentWorkspaceId
-                                    ? "bg-[oklch(0.96_0.02_130)] text-[oklch(0.25_0.03_135)]"
-                                    : "text-[oklch(0.4_0.03_135)] hover:bg-[oklch(0.97_0.01_135)]"
+                                    ? "bg-slate-100 text-foreground"
+                                    : "text-muted-foreground hover:bg-slate-50"
                             )}
                         >
                             <div
                                 className={cn(
                                     "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold",
                                     ws.id === currentWorkspaceId
-                                        ? "bg-gradient-to-br from-[oklch(0.55_0.14_135)] to-[oklch(0.7_0.12_115)] text-white shadow-sm"
-                                        : "bg-[oklch(0.94_0.02_130)] text-[oklch(0.45_0.04_135)]"
+                                        ? "bg-[#ff6b00] text-white shadow-sm"
+                                        : "bg-muted text-muted-foreground"
                                 )}
                             >
                                 {ws.name.charAt(0).toUpperCase()}
                             </div>
                             <span className="flex-1 truncate">{ws.name}</span>
                             {ws.id === currentWorkspaceId && (
-                                <Check className="h-3.5 w-3.5 text-[oklch(0.55_0.14_135)]" />
+                                <Check className="h-3.5 w-3.5 text-[#ff6b00]" />
                             )}
                         </DropdownMenuItem>
                     ))}
