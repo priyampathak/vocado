@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+});
 
 export const metadata: Metadata = {
   title: "Vocado CRM Dashboard",
@@ -17,8 +23,8 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className="font-sans antialiased flex flex-col min-h-screen bg-background text-foreground"
-          style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+          className={`${dmSans.variable} font-sans antialiased flex flex-col min-h-screen bg-background text-foreground`}
+          style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}
         >
           <TooltipProvider>
             {children}

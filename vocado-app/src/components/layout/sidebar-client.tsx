@@ -155,7 +155,7 @@ export function SidebarClient({
             key={plot.id}
             onClick={() => navigateTo(`/workspace/${workspaceId}/plot/${plot.id}`)}
             className={cn(
-                "group flex w-full items-center gap-2 rounded-lg px-6 py-[8px] text-[12px] font-medium transition-all duration-150",
+                "group flex w-full items-center gap-2 rounded-lg px-6 py-[8px] text-[12px] font-normal transition-all duration-150",
                 "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
         >
@@ -172,7 +172,7 @@ export function SidebarClient({
                 <button
                     onClick={() => toggleFolder(folder.id)}
                     className={cn(
-                        "group flex w-full items-center gap-2.5 rounded-xl px-4 py-[10px] text-[12px] font-semibold transition-all duration-150",
+                        "group flex w-full items-center gap-2.5 rounded-xl px-4 py-[10px] text-[12px] font-medium transition-all duration-150",
                         isOpen
                             ? "bg-secondary/40 text-[#c855aa]"
                             : "text-foreground hover:bg-muted/50"
@@ -246,7 +246,7 @@ export function SidebarClient({
                                 <div key={ts.id}>
                                     <button
                                         onClick={() => toggleTeamspace(ts.id)}
-                                        className="group flex w-full items-center gap-1.5 rounded-xl px-2 py-[7px] text-[13px] font-semibold text-[oklch(0.3_0.04_135)] transition-all duration-150 hover:bg-[oklch(0.96_0.015_135)]"
+                                        className="group flex w-full items-center gap-1.5 rounded-xl px-2 py-[7px] text-[13px] font-medium text-[oklch(0.3_0.04_135)] transition-all duration-150 hover:bg-[oklch(0.96_0.015_135)]"
                                     >
                                         <ChevronRight
                                             className={cn(
@@ -323,7 +323,7 @@ export function SidebarClient({
                                         navigateTo(mod.href);
                                     }}
                                     className={cn(
-                                        "group flex items-center gap-3.5 rounded-full px-5 py-[12px] text-[13px] font-semibold transition-all duration-200",
+                                        "group flex items-center gap-3.5 rounded-full px-5 py-[12px] text-[13px] font-medium transition-all duration-200",
                                         active
                                             ? "bg-[#1e2631] text-white shadow-sm"
                                             : "text-foreground hover:bg-muted/50"
@@ -339,7 +339,7 @@ export function SidebarClient({
                                     />
                                     <span className="flex-1 text-left">{mod.label}</span>
                                     {mod.badge && (
-                                        <Badge className="h-5 min-w-5 justify-center rounded-full bg-secondary/20 px-1.5 text-[10px] font-bold text-secondary-foreground border-0">
+                                        <Badge className="h-5 min-w-5 justify-center rounded-full bg-secondary/20 px-1.5 text-[10px] font-semibold text-secondary-foreground border-0">
                                             {mod.badge}
                                         </Badge>
                                     )}

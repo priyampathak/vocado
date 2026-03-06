@@ -65,7 +65,7 @@ export function WorkspaceSwitcher({
 
                         {/* Workspace Name */}
                         <div className="flex flex-1 flex-col min-w-0">
-                            <span className="text-[17px] font-bold tracking-tight text-foreground truncate">
+                            <span className="text-[17px] font-semibold tracking-tight text-foreground truncate">
                                 {current?.name ?? "Projector"}
                             </span>
                         </div>
@@ -85,7 +85,7 @@ export function WorkspaceSwitcher({
                     className="w-[240px] rounded-2xl border-[oklch(0.93_0.01_130)] bg-white p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
                 >
                     <div className="px-2 py-1.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.6_0.04_135)]">
+                        <p className="text-[10px] font-medium uppercase tracking-widest text-[oklch(0.6_0.04_135)]">
                             Workspaces
                         </p>
                     </div>
@@ -103,7 +103,7 @@ export function WorkspaceSwitcher({
                         >
                             <div
                                 className={cn(
-                                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold",
+                                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold",
                                     ws.id === currentWorkspaceId
                                         ? "bg-[#ff6b00] text-white shadow-sm"
                                         : "bg-muted text-muted-foreground"
