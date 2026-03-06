@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter, usePathname, useParams } from "next/navigation";
+import * as LucideIcons from "lucide-react";
 import {
     Search,
     LayoutDashboard,
@@ -11,6 +12,7 @@ import {
     Building2,
     Users,
     ChevronRight,
+    ChevronDown,
     FolderOpen,
     FileText,
     Plus,
@@ -18,7 +20,16 @@ import {
     Lock,
     Settings,
     HelpCircle,
+    Folder,
+    Edit,
+    Trash2,
 } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +40,9 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { WorkspaceSwitcher } from "./workspace-switcher";
-import { createTeamspace, createFolder, createPlot } from "@/app/actions/teamspace";
+import { createTeamspace, deleteFolder, renameFolder, deletePlot, renamePlot } from "@/app/actions/teamspace";
+import { CreateFolderDialog } from "./create-folder-dialog";
+import { CreatePlotDialog } from "./create-plot-dialog";
 
 // ──────────────────────────────────────────
 // Types
@@ -39,6 +52,7 @@ interface PlotData {
     id: string;
     name: string;
     emoji?: string | null;
+    color?: string | null;
 }
 
 interface FolderData {
@@ -53,6 +67,7 @@ interface TeamspaceData {
     id: string;
     name: string;
     emoji?: string | null;
+    members?: Array<{ role: "ADMIN" | "MEMBER" }>;
     folders: FolderData[];
     plots: PlotData[];
 }
@@ -114,6 +129,10 @@ export function SidebarClient({
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
     const [isPending, startTransition] = useTransition();
     const [mounted, setMounted] = React.useState(false);
+    
+    // Dialog states
+    const [createFolderDialog, setCreateFolderDialog] = React.useState<{ open: boolean; teamspaceId: string | null }>({ open: false, teamspaceId: null });
+    const [createPlotDialog, setCreatePlotDialog] = React.useState<{ open: boolean; teamspaceId: string | null; folderId: string | null; isPrivate: boolean }>({ open: false, teamspaceId: null, folderId: null, isPrivate: false });
 
     React.useEffect(() => setMounted(true), []);
 
@@ -150,29 +169,69 @@ export function SidebarClient({
     // Render Tree Nodes
     // ──────────────────────────────────────────
 
-    const renderPlot = (plot: PlotData) => (
-        <button
+    const renderPlot = (plot: PlotData, canManage: boolean) => (
+        <div
             key={plot.id}
             onClick={() => navigateTo(`/workspace/${workspaceId}/plot/${plot.id}`)}
             className={cn(
-                "group flex w-full items-center gap-2 rounded-lg px-6 py-[8px] text-[12px] font-normal transition-all duration-150",
+                "group flex w-full items-center gap-2 rounded-lg px-6 py-[8px] text-[12px] font-normal transition-all duration-150 cursor-pointer",
                 "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
         >
-            <div className={`h-1.5 w-1.5 rounded-full ${plot.emoji ? 'bg-secondary' : 'bg-[#e56b4f]'}`} />
+            <div
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: plot.color || "#3b82f6" }}
+            />
             <span className="flex-1 truncate text-left">{plot.name}</span>
-        </button>
+
+            {canManage && (
+                <div className="opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button className="flex items-center justify-center h-5 w-5 rounded hover:bg-muted">
+                                <MoreHorizontal className="h-3 w-3 text-[oklch(0.55_0.04_135)]" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const newName = prompt("Rename plot", plot.name);
+                                    if (!newName || !newName.trim()) return;
+                                    await renamePlot(workspaceId, plot.id, newName.trim());
+                                }}
+                            >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (confirm(`Delete plot \"${plot.name}\"?`)) {
+                                        await deletePlot(workspaceId, plot.id);
+                                    }
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Plot
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            )}
+        </div>
     );
 
-    const renderFolder = (folder: FolderData, parentTeamspaceId: string) => {
+    const renderFolder = (folder: FolderData, parentTeamspaceId: string, canManage: boolean) => {
         const isOpen = expandedFolders.has(folder.id);
         const tsId = folder.teamspaceId ?? parentTeamspaceId;
         return (
-            <div key={folder.id}>
-                <button
+            <div key={folder.id} className="group">
+                <div
                     onClick={() => toggleFolder(folder.id)}
                     className={cn(
-                        "group flex w-full items-center gap-2.5 rounded-xl px-4 py-[10px] text-[12px] font-medium transition-all duration-150",
+                        "flex w-full items-center gap-2.5 rounded-xl px-4 py-[10px] text-[12px] font-medium transition-all duration-150 cursor-pointer",
                         isOpen
                             ? "bg-secondary/40 text-[#c855aa]"
                             : "text-foreground hover:bg-muted/50"
@@ -186,19 +245,66 @@ export function SidebarClient({
                             isOpen ? "rotate-90" : ""
                         )}
                     />
-                    <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                        <Plus
-                            className="h-3 w-3 text-[oklch(0.55_0.04_135)] hover:text-[oklch(0.35_0.04_135)]"
-                            onClick={async (e) => {
-                                e.stopPropagation();
-                                await createPlot(workspaceId, tsId, "Untitled Plot", { folderId: folder.id });
-                            }}
-                        />
+                    {canManage && (
+                    <div className="opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button className="flex items-center justify-center h-5 w-5 rounded hover:bg-muted">
+                                    <MoreHorizontal className="h-3 w-3 text-[oklch(0.55_0.04_135)]" />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCreatePlotDialog({ open: true, teamspaceId: tsId, folderId: folder.id, isPrivate: false });
+                                    }}
+                                >
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    Create Plot
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => {
+                                    e.stopPropagation();
+                                    const newName = prompt("Rename folder", folder.name);
+                                    if (!newName || !newName.trim()) return;
+                                    void renameFolder(workspaceId, folder.id, newName.trim());
+                                }}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Rename Folder
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                    className="text-destructive"
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (confirm(`Delete folder "${folder.name}"? This will also delete all plots inside.`)) {
+                                            await deleteFolder(workspaceId, folder.id);
+                                        }
+                                    }}
+                                >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete Folder
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
-                </button>
+                    )}
+                </div>
                 {isOpen && (
                     <div className="ml-5 flex flex-col gap-0.5 border-l border-[oklch(0.93_0.01_130)] pl-2">
-                        {folder.plots.map(renderPlot)}
+                        {folder.plots.map((plot) => renderPlot(plot, canManage))}
+                        {/* Add Plot button inside folder */}
+                        {canManage && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCreatePlotDialog({ open: true, teamspaceId: tsId, folderId: folder.id, isPrivate: false });
+                                }}
+                                className="flex items-center gap-1.5 rounded-lg px-2 py-[5px] text-[11px] font-medium text-[oklch(0.6_0.04_135)] transition-colors hover:bg-[oklch(0.97_0.01_135)] hover:text-[oklch(0.45_0.04_135)]"
+                            >
+                                <Plus className="h-3 w-3" />
+                                <span>New Plot</span>
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
@@ -227,7 +333,7 @@ export function SidebarClient({
                         className="h-4 w-4 hover:text-foreground transition-colors"
                         onClick={async (e) => {
                             e.stopPropagation();
-                            await createTeamspace(workspaceId, "New Teamspace");
+                            await createTeamspace(workspaceId, { name: "New Teamspace" });
                         }}
                     />
                 </div>
@@ -242,11 +348,12 @@ export function SidebarClient({
                     ) : (
                         tree.map((ts) => {
                             const isExpanded = expandedTeamspaces.has(ts.id);
+                            const canManageTeamspace = isAdmin || ts.members?.some((m) => m.role === "ADMIN");
                             return (
-                                <div key={ts.id}>
-                                    <button
+                                <div key={ts.id} className="group">
+                                    <div
                                         onClick={() => toggleTeamspace(ts.id)}
-                                        className="group flex w-full items-center gap-1.5 rounded-xl px-2 py-[7px] text-[13px] font-medium text-[oklch(0.3_0.04_135)] transition-all duration-150 hover:bg-[oklch(0.96_0.015_135)]"
+                                        className="flex w-full items-center gap-1.5 rounded-xl px-2 py-[7px] text-[13px] font-medium text-[oklch(0.3_0.04_135)] transition-all duration-150 hover:bg-[oklch(0.96_0.015_135)] cursor-pointer"
                                     >
                                         <ChevronRight
                                             className={cn(
@@ -254,35 +361,54 @@ export function SidebarClient({
                                                 isExpanded && "rotate-90"
                                             )}
                                         />
-                                        <span className="text-sm">{ts.emoji ?? "📁"}</span>
+                                        {(() => {
+                                            if (ts.emoji && ts.emoji !== "📁") {
+                                                const IconComponent = (LucideIcons as any)[ts.emoji];
+                                                if (IconComponent) {
+                                                    return <IconComponent className="h-4 w-4 shrink-0" />;
+                                                }
+                                            }
+                                            return <Folder className="h-4 w-4 shrink-0" />;
+                                        })()}
                                         <span className="flex-1 truncate text-left">{ts.name}</span>
-                                        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                                            <Plus
-                                                className="h-3 w-3 text-[oklch(0.55_0.04_135)] hover:text-[oklch(0.35_0.04_135)]"
-                                                onClick={async (e) => {
-                                                    e.stopPropagation();
-                                                    await createPlot(workspaceId, ts.id, "Untitled Plot", { isPrivate });
-                                                }}
-                                            />
-                                            <MoreHorizontal className="h-3 w-3 text-[oklch(0.55_0.04_135)]" />
+                                        {canManageTeamspace && (
+                                        <div className="opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button className="flex items-center justify-center h-5 w-5 rounded hover:bg-muted">
+                                                        <Plus className="h-3 w-3 text-[oklch(0.55_0.04_135)]" />
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-40">
+                                                    {!isPrivate && (
+                                                        <DropdownMenuItem
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setCreateFolderDialog({ open: true, teamspaceId: ts.id });
+                                                            }}
+                                                        >
+                                                            <FolderOpen className="h-4 w-4 mr-2" />
+                                                            New Folder
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setCreatePlotDialog({ open: true, teamspaceId: ts.id, folderId: null, isPrivate });
+                                                        }}
+                                                    >
+                                                        <FileText className="h-4 w-4 mr-2" />
+                                                        New Plot
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
-                                    </button>
+                                        )}
+                                    </div>
                                     {isExpanded && (
                                         <div className="ml-4 flex flex-col gap-0.5 border-l border-[oklch(0.93_0.01_130)] pl-2">
-                                            {ts.folders.map((f) => renderFolder(f, ts.id))}
-                                            {ts.plots.map(renderPlot)}
-                                            {/* Add Folder button */}
-                                            {!isPrivate && (
-                                                <button
-                                                    onClick={async () => {
-                                                        await createFolder(workspaceId, ts.id, "New Folder");
-                                                    }}
-                                                    className="flex items-center gap-1.5 rounded-lg px-2 py-[5px] text-[11px] font-medium text-[oklch(0.6_0.04_135)] transition-colors hover:bg-[oklch(0.97_0.01_135)] hover:text-[oklch(0.45_0.04_135)]"
-                                                >
-                                                    <Plus className="h-3 w-3" />
-                                                    <span>New Folder</span>
-                                                </button>
-                                            )}
+                                            {ts.folders.map((f) => renderFolder(f, ts.id, !!canManageTeamspace))}
+                                            {ts.plots.map((plot) => renderPlot(plot, !!canManageTeamspace))}
                                         </div>
                                     )}
                                 </div>
@@ -374,6 +500,22 @@ export function SidebarClient({
                     true
                 )}
             </div>
+
+            {/* Modals */}
+            <CreateFolderDialog
+                open={createFolderDialog.open}
+                onOpenChange={(open) => setCreateFolderDialog({ open, teamspaceId: null })}
+                workspaceId={workspaceId}
+                teamspaceId={createFolderDialog.teamspaceId || ""}
+            />
+            <CreatePlotDialog
+                open={createPlotDialog.open}
+                onOpenChange={(open) => setCreatePlotDialog({ open: false, teamspaceId: null, folderId: null, isPrivate: false })}
+                workspaceId={workspaceId}
+                teamspaceId={createPlotDialog.teamspaceId || ""}
+                folderId={createPlotDialog.folderId}
+                isPrivate={createPlotDialog.isPrivate}
+            />
         </aside>
     );
 }

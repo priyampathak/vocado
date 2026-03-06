@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id         String            @id @default(auto()) @map("_id") @db.ObjectId
-  clerkId    String            @unique
-  email      String            @unique
-  name       String
-  avatarUrl  String?
-  workspaces WorkspaceMember[]
-  plots      Plot[]            @relation("PlotCreator")
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
+  id               String              @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId          String              @unique
+  email            String              @unique
+  name             String
+  avatarUrl        String?
+  workspaces       WorkspaceMember[]
+  teamspaces       TeamspaceMember[]   @relation("TeamspaceMembership")
+  plots            Plot[]              @relation("PlotCreator")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 }
 
 model Workspace {
@@ -49,17 +50,34 @@ model WorkspaceMember {
 // ---------------------------------------------------------------------------
 
 model Teamspace {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  id          String              @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  emoji       String?   @default("📁")
-  workspaceId String    @db.ObjectId
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  description String?
+  emoji       String?             @default("📁")
+  workspaceId String              @db.ObjectId
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   folders     Folder[]
   plots       Plot[]
+  members     TeamspaceMember[]
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model TeamspaceMember {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String      @db.ObjectId
+  teamspaceId String      @db.ObjectId
+  role        TeamRole    @default(MEMBER)
+
+  user        User        @relation("TeamspaceMembership", fields: [userId], references: [id], onDelete: Cascade)
+  teamspace   Teamspace   @relation(fields: [teamspaceId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, teamspaceId])
 }
 
 model Folder {
@@ -81,6 +99,7 @@ model Plot {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   emoji       String?   @default("📄")
+  color       String?   @default("#3b82f6")
 
   // Belongs to a Teamspace (always)
   teamspaceId String    @db.ObjectId
@@ -103,6 +122,11 @@ model Plot {
 
 enum Role {
   OWNER
+  ADMIN
+  MEMBER
+}
+
+enum TeamRole {
   ADMIN
   MEMBER
 }
