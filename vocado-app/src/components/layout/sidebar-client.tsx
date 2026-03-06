@@ -86,7 +86,6 @@ interface ModuleItem {
 
 function getModules(workspaceId: string): ModuleItem[] {
     return [
-        { icon: Search, label: "Search", href: "#search" },
         { icon: LayoutDashboard, label: "Dashboard", href: `/workspace/${workspaceId}` },
         { icon: MessageCircle, label: "Chat", href: `/workspace/${workspaceId}/chat` },
         { icon: Mail, label: "Mailbox", href: `/workspace/${workspaceId}/mailbox` },
@@ -156,7 +155,7 @@ export function SidebarClient({
             key={plot.id}
             onClick={() => navigateTo(`/workspace/${workspaceId}/plot/${plot.id}`)}
             className={cn(
-                "group flex w-full items-center gap-2 rounded-lg px-6 py-[8px] text-[14px] font-medium transition-all duration-150",
+                "group flex w-full items-center gap-2 rounded-lg px-6 py-[8px] text-[12px] font-medium transition-all duration-150",
                 "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
         >
@@ -173,7 +172,7 @@ export function SidebarClient({
                 <button
                     onClick={() => toggleFolder(folder.id)}
                     className={cn(
-                        "group flex w-full items-center gap-2.5 rounded-xl px-4 py-[10px] text-[14px] font-semibold transition-all duration-150",
+                        "group flex w-full items-center gap-2.5 rounded-xl px-4 py-[10px] text-[12px] font-semibold transition-all duration-150",
                         isOpen
                             ? "bg-secondary/40 text-[#c855aa]"
                             : "text-foreground hover:bg-muted/50"
@@ -216,7 +215,7 @@ export function SidebarClient({
         <div className="px-2.5">
             <button
                 onClick={() => setOpen(!isOpen)}
-                className="group flex w-full items-center justify-between px-4 py-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="group flex w-full items-center justify-between px-4 py-3 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
                 <div className="flex items-center gap-2">
                     {sectionLabel}
@@ -300,7 +299,7 @@ export function SidebarClient({
     // ──────────────────────────────────────────
 
     return (
-        <aside className="flex h-screen w-[280px] shrink-0 flex-col bg-white border-r-0 shadow-[4px_0_30px_rgb(0,0,0,0.02)] m-4 rounded-[2rem] overflow-hidden ml-6 my-6 h-[calc(100vh-48px)] pb-4">
+        <aside className="flex h-screen w-[280px] shrink-0 flex-col bg-white border-r-0 shadow-[4px_0_30px_rgb(0,0,0,0.02)] m-4 rounded-[2rem] overflow-hidden ml-6 mt-6 mb-8 h-[calc(100vh-64px)] pb-4">
             {/* A. Workspace Switcher */}
             <WorkspaceSwitcher
                 workspaces={workspaces}
@@ -324,7 +323,7 @@ export function SidebarClient({
                                         navigateTo(mod.href);
                                     }}
                                     className={cn(
-                                        "group flex items-center gap-3.5 rounded-full px-5 py-[12px] text-[15px] font-semibold transition-all duration-200",
+                                        "group flex items-center gap-3.5 rounded-full px-5 py-[12px] text-[13px] font-semibold transition-all duration-200",
                                         active
                                             ? "bg-[#1e2631] text-white shadow-sm"
                                             : "text-foreground hover:bg-muted/50"
@@ -374,19 +373,6 @@ export function SidebarClient({
                     setMySpaceOpen,
                     true
                 )}
-            </div>
-
-            {/* Bottom Section - Action Button */}
-            <div className="px-6 py-2">
-                <button
-                    onClick={async () => {
-                        await createTeamspace(workspaceId, "New Space");
-                    }}
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1e2631] px-4 py-3.5 text-[15px] font-semibold text-white transition-all shadow-sm hover:bg-[#1e2631]/90"
-                >
-                    <Plus className="h-5 w-5" />
-                    <span>New Space</span>
-                </button>
             </div>
         </aside>
     );
