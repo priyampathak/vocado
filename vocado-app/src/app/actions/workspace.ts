@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { Role } from "@prisma/client";
 
 function generateInviteCode() {
@@ -202,8 +203,11 @@ export async function getAllUserWorkspaces() {
         orderBy: { createdAt: "desc" },
     });
 
+    const isAdmin = (role: string) => role === "OWNER" || role === "ADMIN";
+
     return memberships.map((m) => ({
         ...m.workspace,
+        inviteCode: isAdmin(m.role) ? m.workspace.inviteCode : "••••-••••-••••",
         userRole: m.role,
     }));
 }
@@ -215,6 +219,18 @@ export async function createWorkspaceFromDialog(data: {
     memberIds?: string[];
 }) {
     const dbUser = await requireDbUser();
+
+    if (data.memberIds && data.memberIds.length > 0) {
+        const existingUsers = await db.user.findMany({
+            where: { id: { in: data.memberIds } },
+            select: { id: true },
+        });
+        const existingIds = new Set(existingUsers.map((u) => u.id));
+        const invalid = data.memberIds.filter((id) => !existingIds.has(id));
+        if (invalid.length > 0) {
+            throw new Error(`Some users do not exist: ${invalid.join(", ")}`);
+        }
+    }
 
     const inviteCode = generateInviteCode();
 
@@ -238,10 +254,14 @@ export async function createWorkspaceFromDialog(data: {
             members: {
                 include: { user: true },
             },
+            _count: {
+                select: { teamspaces: true, members: true },
+            },
         },
     });
 
-    return workspace;
+    revalidatePath(`/workspace/${workspace.id}/workspaces`);
+    return { ...workspace, userRole: "OWNER" as Role };
 }
 
 export async function updateWorkspace(
@@ -262,6 +282,8 @@ export async function updateWorkspace(
         data,
     });
 
+    revalidatePath(`/workspace/${workspaceId}`);
+    revalidatePath(`/workspace/${workspaceId}/workspaces`);
     return workspace;
 }
 
@@ -279,6 +301,7 @@ export async function deleteWorkspace(workspaceId: string) {
         where: { id: workspaceId },
     });
 
+    revalidatePath("/");
     return { success: true };
 }
 
@@ -292,11 +315,20 @@ export async function addWorkspaceMember(
     const canManage = await canManageWorkspace(workspaceId, dbUser.id);
     if (!canManage) throw new Error("Only workspace admins can add members.");
 
+    const targetUser = await db.user.findUnique({ where: { id: userId } });
+    if (!targetUser) throw new Error("User does not exist.");
+
+    const existing = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId, workspaceId } },
+    });
+    if (existing) throw new Error("User is already a member of this workspace.");
+
     const member = await db.workspaceMember.create({
         data: { userId, workspaceId, role },
         include: { user: true },
     });
 
+    revalidatePath(`/workspace/${workspaceId}/workspaces`);
     return member;
 }
 
@@ -309,10 +341,17 @@ export async function removeWorkspaceMember(
     const canManage = await canManageWorkspace(workspaceId, dbUser.id);
     if (!canManage) throw new Error("Only workspace admins can remove members.");
 
+    const targetMembership = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId: memberIdToRemove, workspaceId } },
+    });
+    if (!targetMembership) throw new Error("Member not found.");
+    if (targetMembership.role === "OWNER") throw new Error("Cannot remove the workspace owner.");
+
     await db.workspaceMember.delete({
         where: { userId_workspaceId: { userId: memberIdToRemove, workspaceId } },
     });
 
+    revalidatePath(`/workspace/${workspaceId}/workspaces`);
     return { success: true };
 }
 
@@ -326,12 +365,19 @@ export async function updateWorkspaceMemberRole(
     const canManage = await canManageWorkspace(workspaceId, dbUser.id);
     if (!canManage) throw new Error("Only workspace admins can update member roles.");
 
+    const targetMembership = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId: memberIdToUpdate, workspaceId } },
+    });
+    if (!targetMembership) throw new Error("Member not found.");
+    if (targetMembership.role === "OWNER") throw new Error("Cannot change the owner's role.");
+
     const member = await db.workspaceMember.update({
         where: { userId_workspaceId: { userId: memberIdToUpdate, workspaceId } },
         data: { role: newRole },
         include: { user: true },
     });
 
+    revalidatePath(`/workspace/${workspaceId}/workspaces`);
     return member;
 }
 
@@ -363,19 +409,29 @@ export async function getWorkspaceDetails(workspaceId: string) {
 
     if (!workspace) throw new Error("Workspace not found.");
 
+    const isAdmin = membership.role === "OWNER" || membership.role === "ADMIN";
+
     return {
         ...workspace,
+        inviteCode: isAdmin ? workspace.inviteCode : "••••-••••-••••",
         userRole: membership.role,
     };
 }
 
-export async function getAllUsers() {
+export async function searchUsersForWorkspace(query: string) {
     const dbUser = await requireDbUser();
 
-    // Get all users for adding to workspace
+    if (!query || query.trim().length < 2) {
+        return [];
+    }
+
     const users = await db.user.findMany({
         where: {
-            id: { not: dbUser.id }, // Exclude current user
+            id: { not: dbUser.id },
+            OR: [
+                { email: { contains: query, mode: "insensitive" } },
+                { name: { contains: query, mode: "insensitive" } },
+            ],
         },
         select: {
             id: true,
@@ -383,6 +439,7 @@ export async function getAllUsers() {
             email: true,
             avatarUrl: true,
         },
+        take: 15,
         orderBy: { name: "asc" },
     });
 

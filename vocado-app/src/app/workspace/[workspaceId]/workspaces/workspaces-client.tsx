@@ -160,7 +160,6 @@ export function WorkspacesClient({
                 <TableHead className="text-center">Teamspaces</TableHead>
                 <TableHead>Your Role</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead>Invite Code</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -200,11 +199,6 @@ export function WorkspacesClient({
                   <TableCell>{getRoleBadge(workspace.userRole)}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {formatDate(workspace.createdAt)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {workspace.inviteCode}
-                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

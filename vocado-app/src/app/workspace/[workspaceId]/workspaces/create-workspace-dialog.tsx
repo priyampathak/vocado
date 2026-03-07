@@ -13,16 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { createWorkspaceFromDialog, getAllUsers } from "@/app/actions/workspace";
+import { createWorkspaceFromDialog, searchUsersForWorkspace } from "@/app/actions/workspace";
 import { Badge } from "@/components/ui/badge";
-import { X, Image } from "lucide-react";
+import { X, Image, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CreateWorkspaceDialogProps {
@@ -42,17 +35,28 @@ export function CreateWorkspaceDialog({
   const [description, setDescription] = React.useState("");
   const [logoUrl, setLogoUrl] = React.useState("");
   const [selectedMembers, setSelectedMembers] = React.useState<string[]>([]);
-  const [allUsers, setAllUsers] = React.useState<any[]>([]);
+  const [selectedUserDetails, setSelectedUserDetails] = React.useState<any[]>([]);
+  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const [memberSearch, setMemberSearch] = React.useState("");
+  const [isSearching, setIsSearching] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (open) {
-      getAllUsers()
-        .then(setAllUsers)
-        .catch(console.error);
+    if (!open) return;
+    if (memberSearch.trim().length < 2) {
+      setSearchResults([]);
+      return;
     }
-  }, [open]);
+    setIsSearching(true);
+    const timeout = setTimeout(() => {
+      searchUsersForWorkspace(memberSearch)
+        .then(setSearchResults)
+        .catch(console.error)
+        .finally(() => setIsSearching(false));
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [memberSearch, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,11 +76,13 @@ export function CreateWorkspaceDialog({
         memberIds: selectedMembers,
       });
       onSuccess(workspace);
-      // Reset form
       setName("");
       setDescription("");
       setLogoUrl("");
       setSelectedMembers([]);
+      setSelectedUserDetails([]);
+      setMemberSearch("");
+      setSearchResults([]);
     } catch (err: any) {
       setError(err.message || "Failed to create workspace");
     } finally {
@@ -84,16 +90,18 @@ export function CreateWorkspaceDialog({
     }
   };
 
-  const toggleMember = (userId: string) => {
-    setSelectedMembers((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
-    );
+  const addMember = (user: any) => {
+    if (!selectedMembers.includes(user.id)) {
+      setSelectedMembers((prev) => [...prev, user.id]);
+      setSelectedUserDetails((prev) => [...prev, user]);
+    }
+    setMemberSearch("");
+    setSearchResults([]);
   };
 
-  const getSelectedUsers = () => {
-    return allUsers.filter((user) => selectedMembers.includes(user.id));
+  const removeMember = (userId: string) => {
+    setSelectedMembers((prev) => prev.filter((id) => id !== userId));
+    setSelectedUserDetails((prev) => prev.filter((u) => u.id !== userId));
   };
 
   return (
@@ -159,13 +167,13 @@ export function CreateWorkspaceDialog({
           <div className="space-y-2">
             <Label>Add Team Members</Label>
             <p className="text-sm text-muted-foreground">
-              Select members to add to this workspace (they will be assigned as MEMBER role)
+              Search by name or email to add members (they will be assigned MEMBER role)
             </p>
             
             {/* Selected Members */}
-            {selectedMembers.length > 0 && (
+            {selectedUserDetails.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2 p-3 bg-muted/30 rounded-lg">
-                {getSelectedUsers().map((user) => (
+                {selectedUserDetails.map((user) => (
                   <Badge
                     key={user.id}
                     variant="secondary"
@@ -180,7 +188,7 @@ export function CreateWorkspaceDialog({
                     <span className="text-xs">{user.name}</span>
                     <button
                       type="button"
-                      onClick={() => toggleMember(user.id)}
+                      onClick={() => removeMember(user.id)}
                       className="ml-1 rounded-full hover:bg-muted"
                     >
                       <X className="h-3 w-3" />
@@ -190,42 +198,48 @@ export function CreateWorkspaceDialog({
               </div>
             )}
 
-            {/* User Selection */}
-            <Select
-              value=""
-              onValueChange={(userId) => {
-                if (userId && !selectedMembers.includes(userId)) {
-                  setSelectedMembers((prev) => [...prev, userId]);
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select members to add..." />
-              </SelectTrigger>
-              <SelectContent>
-                {allUsers
-                  .filter((user) => !selectedMembers.includes(user.id))
-                  .map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-5 w-5">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name or email (min 2 chars)..."
+                className="flex h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+              />
+            </div>
+
+            {/* Search Results */}
+            {(memberSearch.trim().length >= 2) && (
+              <div className="border rounded-lg max-h-40 overflow-y-auto">
+                {isSearching ? (
+                  <div className="py-3 text-sm text-center text-muted-foreground">Searching...</div>
+                ) : searchResults.filter((u) => !selectedMembers.includes(u.id)).length === 0 ? (
+                  <div className="py-3 text-sm text-center text-muted-foreground">No users found</div>
+                ) : (
+                  searchResults
+                    .filter((u) => !selectedMembers.includes(u.id))
+                    .map((user) => (
+                      <button
+                        key={user.id}
+                        type="button"
+                        onClick={() => addMember(user)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <Avatar className="h-6 w-6">
                           <AvatarImage src={user.avatarUrl || undefined} />
                           <AvatarFallback className="text-[10px]">
                             {user.name.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span>{user.name}</span>
+                        <span className="font-medium">{user.name}</span>
                         <span className="text-xs text-muted-foreground">({user.email})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                {allUsers.filter((user) => !selectedMembers.includes(user.id)).length === 0 && (
-                  <div className="py-2 px-2 text-sm text-muted-foreground text-center">
-                    {allUsers.length === 0 ? "No other users available" : "All users added"}
-                  </div>
+                      </button>
+                    ))
                 )}
-              </SelectContent>
-            </Select>
+              </div>
+            )}
           </div>
 
           {/* Error */}

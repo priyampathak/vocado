@@ -16,20 +16,25 @@ model User {
   workspaces       WorkspaceMember[]
   teamspaces       TeamspaceMember[]   @relation("TeamspaceMembership")
   plots            Plot[]              @relation("PlotCreator")
+
+  conversationMemberships ConversationMember[]
+  sentMessages            Message[]
+
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 }
 
 model Workspace {
-  id          String            @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  description String?
-  logoUrl     String?
-  inviteCode  String            @unique
-  members     WorkspaceMember[]
-  teamspaces  Teamspace[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id            String            @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  description   String?
+  logoUrl       String?
+  inviteCode    String            @unique
+  members       WorkspaceMember[]
+  teamspaces    Teamspace[]
+  conversations Conversation[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 }
 
 model WorkspaceMember {
@@ -89,8 +94,6 @@ model Folder {
   teamspaceId String    @db.ObjectId
   teamspace   Teamspace @relation(fields: [teamspaceId], references: [id], onDelete: Cascade)
 
-  // A Folder holds Plots — but a Folder CANNOT contain other Folders.
-  // There is intentionally NO parentFolderId field here.
   plots       Plot[]
 
   createdAt   DateTime  @default(now())
@@ -103,23 +106,92 @@ model Plot {
   emoji       String?   @default("📄")
   color       String?   @default("#3b82f6")
 
-  // Belongs to a Teamspace (always)
   teamspaceId String    @db.ObjectId
   teamspace   Teamspace @relation(fields: [teamspaceId], references: [id], onDelete: Cascade)
 
-  // Optionally placed inside a Folder
   folderId    String?   @db.ObjectId
   folder      Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
-  // Private plots only visible to the creator ("My Space")
   isPrivate   Boolean   @default(false)
 
-  // Creator — for My Space filtering
   creatorId   String    @db.ObjectId
   creator     User      @relation("PlotCreator", fields: [creatorId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Chat System: Conversation → Message (DM, Group DM, Channel, Plot Activity)
+// ---------------------------------------------------------------------------
+
+model Conversation {
+  id              String              @id @default(auto()) @map("_id") @db.ObjectId
+  type            ConversationType
+  workspaceId     String              @db.ObjectId
+  workspace       Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name            String?
+  description     String?
+  visibility      ChannelVisibility?  @default(PUBLIC)
+  createdById     String?             @db.ObjectId
+
+  lastMessageAt   DateTime?
+  lastMessageText String?
+  lastSenderId    String?             @db.ObjectId
+
+  members         ConversationMember[]
+  messages        Message[]
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([workspaceId, type])
+  @@index([workspaceId, lastMessageAt(sort: Desc)])
+}
+
+model ConversationMember {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId  String        @db.ObjectId
+  userId          String        @db.ObjectId
+  lastReadAt      DateTime      @default(now())
+
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime      @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId  String        @db.ObjectId
+  senderId        String        @db.ObjectId
+  content         String
+  mentions        String[]      @default([])
+  isSystem        Boolean       @default(false)
+
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([conversationId, createdAt(sort: Desc)])
+}
+
+enum ConversationType {
+  DM
+  GROUP_DM
+  CHANNEL
+  PLOT_ACTIVITY
+}
+
+enum ChannelVisibility {
+  PUBLIC
+  PRIVATE
 }
 
 enum Role {

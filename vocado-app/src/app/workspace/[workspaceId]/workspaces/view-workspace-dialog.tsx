@@ -177,7 +177,7 @@ export function ViewWorkspaceDialog({
         ) : details ? (
           <div className="space-y-6">
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className={`grid ${canManage ? "grid-cols-3" : "grid-cols-2"} gap-4`}>
               <div className="p-4 rounded-lg bg-muted/30 text-center">
                 <div className="text-2xl font-bold">{details._count?.members || 0}</div>
                 <div className="text-sm text-muted-foreground">Members</div>
@@ -186,12 +186,14 @@ export function ViewWorkspaceDialog({
                 <div className="text-2xl font-bold">{details._count?.teamspaces || 0}</div>
                 <div className="text-sm text-muted-foreground">Teamspaces</div>
               </div>
-              <div className="p-4 rounded-lg bg-muted/30 text-center">
-                <div className="text-sm font-mono text-muted-foreground">
-                  {details.inviteCode}
+              {canManage && (
+                <div className="p-4 rounded-lg bg-muted/30 text-center">
+                  <div className="text-sm font-mono text-muted-foreground">
+                    {details.inviteCode}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Invite Code</div>
                 </div>
-                <div className="text-sm text-muted-foreground">Invite Code</div>
-              </div>
+              )}
             </div>
 
             {/* Members Section */}

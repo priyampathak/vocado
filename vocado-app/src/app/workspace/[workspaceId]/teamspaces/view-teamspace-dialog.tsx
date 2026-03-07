@@ -28,13 +28,14 @@ import {
   addTeamspaceMember,
   getWorkspaceMembers,
 } from "@/app/actions/teamspace";
-import { TeamRole } from "@prisma/client";
+import { TeamRole, Role } from "@prisma/client";
 import { Users, Calendar, FolderOpen, FileText, Trash2, UserPlus, Image } from "lucide-react";
 
 interface ViewTeamspaceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workspaceId: string;
+  workspaceUserRole: Role | null;
   teamspace: {
     id: string;
     name: string;
@@ -50,6 +51,7 @@ export function ViewTeamspaceDialog({
   open,
   onOpenChange,
   workspaceId,
+  workspaceUserRole,
   teamspace: initialTeamspace,
   onUpdate,
 }: ViewTeamspaceDialogProps) {
@@ -59,7 +61,9 @@ export function ViewTeamspaceDialog({
   const [addingMember, setAddingMember] = React.useState(false);
   const [selectedUserId, setSelectedUserId] = React.useState<string>("");
 
-  const isAdmin = initialTeamspace.userRole === TeamRole.ADMIN;
+  const isWorkspaceAdmin = workspaceUserRole === Role.OWNER || workspaceUserRole === Role.ADMIN;
+  const isTeamspaceAdmin = initialTeamspace.userRole === TeamRole.ADMIN;
+  const isAdmin = isWorkspaceAdmin || isTeamspaceAdmin;
 
   React.useEffect(() => {
     if (open) {
@@ -146,7 +150,6 @@ export function ViewTeamspaceDialog({
     });
   };
 
-  // Filter out members already in the teamspace
   const availableMembers = React.useMemo(() => {
     if (!teamspace) return [];
     const teamspaceMemberIds = teamspace.members.map((m: any) => m.userId);

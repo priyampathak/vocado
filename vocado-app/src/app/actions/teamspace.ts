@@ -170,13 +170,26 @@ export async function addTeamspaceMember(
     });
     const isWorkspaceAdmin = workspaceMembership?.role === Role.ADMIN || workspaceMembership?.role === Role.OWNER;
 
-    // Check if user is admin of this teamspace OR workspace admin
     const teamMembership = await db.teamspaceMember.findUnique({
         where: { userId_teamspaceId: { userId: dbUser.id, teamspaceId } },
     });
 
     if (!isWorkspaceAdmin && (!teamMembership || teamMembership.role !== TeamRole.ADMIN)) {
         throw new Error("Only admins can add members.");
+    }
+
+    const targetIsWorkspaceMember = await db.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId, workspaceId } },
+    });
+    if (!targetIsWorkspaceMember) {
+        throw new Error("User must be a workspace member before being added to a teamspace.");
+    }
+
+    const existingTeamMember = await db.teamspaceMember.findUnique({
+        where: { userId_teamspaceId: { userId, teamspaceId } },
+    });
+    if (existingTeamMember) {
+        throw new Error("User is already a member of this teamspace.");
     }
 
     const member = await db.teamspaceMember.create({
@@ -627,4 +640,33 @@ export async function getUserRole(workspaceId: string) {
     });
 
     return membership?.role ?? null;
+}
+
+/** Get workspaces where the current user has OWNER or ADMIN role (for teamspace creation dropdown) */
+export async function getAdminWorkspaces() {
+    const dbUser = await requireDbUser();
+
+    const memberships = await db.workspaceMember.findMany({
+        where: {
+            userId: dbUser.id,
+            role: { in: [Role.OWNER, Role.ADMIN] },
+        },
+        include: {
+            workspace: {
+                select: {
+                    id: true,
+                    name: true,
+                    logoUrl: true,
+                },
+            },
+        },
+        orderBy: { createdAt: "asc" },
+    });
+
+    return memberships.map((m) => ({
+        id: m.workspace.id,
+        name: m.workspace.name,
+        logoUrl: m.workspace.logoUrl,
+        role: m.role,
+    }));
 }

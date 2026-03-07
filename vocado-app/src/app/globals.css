@@ -176,3 +176,21 @@
 * {
   scroll-behavior: smooth;
 }
+
+/* Safe area for mobile dock */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Hide scrollbar on mobile for cleaner UI */
+@media (max-width: 767px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

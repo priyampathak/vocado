@@ -283,6 +283,7 @@ export function TeamspacesClient({
             onOpenChange={setViewDialogOpen}
             teamspace={selectedTeamspace}
             workspaceId={workspaceId}
+            workspaceUserRole={workspaceUserRole}
             onUpdate={() => router.refresh()}
           />
         </>
